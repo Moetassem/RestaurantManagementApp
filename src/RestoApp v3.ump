@@ -1,0 +1,118 @@
+namespace ca.mcgill.ecse223.resto.model;
+
+use RestoAppPersistence.ump;
+use RestoAppTableStateMachine.ump;
+
+class RestoApp {
+   1 <@>- * Reservation reservations; // sorted by date and time
+   1 <@>- * Table tables;
+   0..1 -> * Table currentTables; // subsets tables
+   1 <@>- * Order orders;
+   0..1 -> * Order currentOrders; // subsets orders
+   1 <@>- 1 Menu menu;   
+   1 <@>- * PricedMenuItem pricedMenuItems;
+   1 <@>- * Bill bills;
+   1 <@>- * Waiter waiters;
+   0..1 -> 0..1 Waiter logedOnWaiter; // subsets waiter
+   public void reinitialize(){
+	  if(this.waiters == null){
+		  waiters = new ArrayList<Waiter>();
+	  }
+  }
+}
+
+class Reservation {
+   Date date;
+   Time time;
+   Integer numberInParty;
+   contactName;
+   contactEmailAddress;
+   contactPhoneNumber;
+   autounique reservationNumber;
+   * reservations -- 1..* Table tables; // only from currentTables
+}
+
+class Table {
+   unique Integer number;
+   Integer x;
+   Integer y;
+   Integer width;
+   Integer length;
+   1 <@>- 1..* Seat seats;
+   0..1 -> * Seat currentSeats; // subsets seats
+   depend ca.mcgill.ecse223.resto.application.RestoApplication;
+   	depend ca.mcgill.ecse223.resto.controller.RestoAppController;
+	depend ca.mcgill.ecse223.resto.controller.InvalidInputException;
+   public boolean doesOverlap(int x, int y, int width, int length) {
+        RestoApp ra = RestoApplication.getRestoApp();
+        List<ca.mcgill.ecse223.resto.model.Table> tables = ra.getCurrentTables();
+        int[][] tableMap = new int[9999][9999];
+
+        loop:
+        for (int k = 0; k < tables.size(); k++) {
+
+            if (this.equals(tables.get(k))) {
+                continue loop;
+            }
+
+            for (int i = 0; i < tables.get(k).getWidth(); i++) {
+                for (int j = 0; j < tables.get(k).getLength(); j++) {
+                    tableMap[tables.get(k).getX() + i][tables.get(k).getY() + j] = 1;
+                }
+            }
+        }
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < length; j++) {
+                if (tableMap[i + x][j + y] == 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+class Seat {
+}
+
+class Order {
+   Date date;
+   Time time;
+   autounique number;
+   * orders -- 1..* Table tables; // only from currentTables for currentOrders
+   1 <@>- * OrderItem orderItems;
+}
+
+class OrderItem {
+   Integer quantity;
+   * orderItems -- 1 PricedMenuItem pricedMenuItem; // only from MenuItem.currentPricedMenuItem for currentOrders
+   * orderItems -- 1..* Seat seats; // only from order.tables.seats
+}
+
+class Menu {   
+   1 <@>- * MenuItem menuItems;
+}
+
+class MenuItem {
+   unique name;
+   enum ItemCategory { Appetizer, Main, Dessert, AlcoholicBeverage, NonAlcoholicBeverage }
+   lazy ItemCategory itemCategory;
+   1 -- 1..* PricedMenuItem pricedMenuItems;
+   0..1 -> 0..1 PricedMenuItem currentPricedMenuItem; // subsets priced menus items
+}
+
+class PricedMenuItem {
+   Double price;
+}
+
+class Bill {
+   * bills -- 1 Order order; // order.bills.issuedForSeats = order.orderItems.seats
+   * bills -- 1..* Seat issuedForSeats; // only from order.orderItems.seats;
+}
+
+class Waiter {
+   waiterName;
+   waiterEmailAddress;
+   waiterPhoneNumber;
+   0..1 waiter -- * Order orders;
+}

@@ -1,0 +1,16 @@
+.classpath
+.project
+/out/
+/.idea/
+/lib/
+*.class
+/bin/
+/.metadata/
+*.resto
+/.recommenders/
+RestoApp.iml
+representations.aird
+/.settings/
+.DS_Store
+/RemoteSystemsTempFiles/
+*.resto
